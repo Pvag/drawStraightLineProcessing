@@ -24,7 +24,7 @@
 
 // (*) This happens whether the SHIFT key is released before or after the mouse.
 
-Point start;
+PVector start;
 boolean isDrawingLine;
 PGraphics tempLinesLayer; // layer for temporary lines (interactive functionality to better chose line orientation)
 PGraphics permanentPointsAndLinesLayer; // layer with permanent objects (points and lines)
@@ -40,6 +40,9 @@ void setup() {
 }
 
 void draw() {
+  clearFinalImage();
+  drawTempLineIfMouseStillPressedAfterDragging(); // needed because mouseDragged doesn't fire if mouse is not moving
+  drawPermanentLayer();
 }
 
 // core function with most of the logic
@@ -66,25 +69,33 @@ void draw() {
 // anyways, this behavior is easily customizable, by modifying the code
 //
 void mouseDragged() {
-  clearFinalImage();
   if (keyCode == SHIFT) {
     if (!isDrawingLine) {
       setStartingPointOfLine();
       isDrawingLine = true;
     }
     else {
-      addLineToTempLayer();
+      updateTempLayer();
       drawTempLayer();
     }
   }
   else if (keyCode == ENTER && isDrawingLine) {
-    addLineToTempLayer();
+    updateTempLayer();
     drawTempLayer();
   }
   else {
     addPointToPermanentLayer(); // user is dragging without pressing SHIFT
   }
-  drawPermanentLayer();
+}
+
+void drawTempLineIfMouseStillPressedAfterDragging() {
+  if (mousePressed && isDrawingLine && mouseIsNotMoving()) {
+    drawTempLayer();
+  }
+}
+
+boolean mouseIsNotMoving() {
+  return ( (pmouseX == mouseX) && (pmouseY == mouseY) );
 }
 
 // since the drawing happens on layers, clear the canvas from anything
@@ -100,12 +111,12 @@ void drawPermanentLayer() {
 }
 
 void setStartingPointOfLine() {
-  start = new Point(mouseX, mouseY);
+  start = new PVector(mouseX, mouseY);
 }
 
-void addLineToTempLayer() {
+void updateTempLayer() {
   tempLinesLayer.beginDraw();
-  tempLinesLayer.background(bkgColor); // clean this layer at each call
+  tempLinesLayer.background(bkgColor, 0); // clean this layer at each call, but with 0 opacity !
   tempLinesLayer.line(start.x, start.y, mouseX, mouseY);
   tempLinesLayer.endDraw();
 }
@@ -131,9 +142,9 @@ void addLineToPermanentLayer() {
 void mouseReleased() {
   if (isDrawingLine) {
     isDrawingLine = false;
-    clearFinalImage();
+    //clearFinalImage();
     addLineToPermanentLayer();
-    drawPermanentLayer();
+    //drawPermanentLayer();
   }
 }
 
